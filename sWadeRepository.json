@@ -7,10 +7,10 @@
       "name": "Device Temperature Check",
       "category": "Utility",
       "tags": [
-		      "Temperature & Humidity",
-		      "Monitoring",
-		      "Notifications",
-		      "Tools & Utilities"
+	"Temperature & Humidity",
+	"Monitoring",
+	"Notifications",
+	"Tools & Utilities"
       ]
 		"Buttons",
       "location": "https://raw.githubusercontent.com/DolFan81/hubitat-packages/refs/heads/main/dtcManifest.json",
