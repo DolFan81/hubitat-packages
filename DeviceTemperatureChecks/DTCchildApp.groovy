@@ -35,7 +35,6 @@ definition(
     parent: "myHubitat:Device Temperature Check", // <-- must include! (adjust as needed)
     author: "Scott Wade",
     description: "Notify if Device Temperature not reported in X minutes",
-   	documentationLink: "https://hubitatpackagemanager.hubitatcommunity.com/",
     category: "Utility",
     iconUrl: "",
     iconX2Url: "")
@@ -43,31 +42,39 @@ definition(
 preferences {
   page(name: "pageMain", install: true, uninstall: true) 
   {
-	section("")
+	appCreated = false
+    //log.info "b.Created: " + appCreated
+    if(state.created != null){ appCreated = state.created }
+    //log.info "a.Created: " + appCreated
+    section("")
     {
-    	paragraph "<b>For App instructions/help, Click on the ? icon upper right of page</b>"
         label title: "Customize installed child app name:", required: true
-   		
-        input(name: "TempDevices", type: "capability.temperatureMeasurement", title: "Temperature Devices", required: true, multiple: true)
-        input "IntervalCheckMinutes", "enum", title: "Check Values Every", required: true, submitOnChange: true, defaultValue: "120", options: ["15", "20", "30", "60","90", "120", "180","240","360"]
-        input(name: "sendPushMessage", type: "capability.notification", title: "Notification Devices: Hubitat PhoneApp or Pushover", multiple: true, required: false)
-        input("optionQuietTime", "bool", title: "Set a quiet time for notifications?", defaultValue: false, required: false, submitOnChange: true)
-        if(optionQuietTime)
-        {
-        	input("startQuietTime", "Time", title: "Select Start Time?", defaultValue: false, required: true)
-        	input("endQuietTime", "Time", title: "Select End Time?", defaultValue: false, required: true)
+        input name: "TempDevices", type: "capability.temperatureMeasurement", title: "Temperature Devices", required: true, multiple: true
+        input "IntervalCheckMinutes", "enum", title: "Check Values Every", required: true, defaultValue: "120", options: ["15", "20", "30", "60","90", "120", "180","240","360","720","1080","1440"]
+        input name: "sendPushMessage", type: "capability.notification", title: "Notification Devices: Hubitat PhoneApp or Pushover", multiple: true, required: false, submitOnChange: true
+       	if(sendPushMessage)
+       	{
+        	input "optionQuietTime", "bool", title: "Set a quiet time for notifications?", defaultValue: false, required: false, submitOnChange: true
+	    	if(optionQuietTime)
+   			{
+   				input "startQuietTime", "Time", title: "Select Start Time?", defaultValue: false, required: true, width:3
+   				input "endQuietTime", "Time", title: "Select End Time?", defaultValue: false, required: true, width:3
+   			}
+   			paragraph "<hr>"
         }
-        input("createLogEntry", "bool", title: "Create a Warning log entry when check fails?", defaultValue: false, required: false)
-    }
-    section ("Logging") {
-		input("logOutput", "bool", title: "Enable App logging?", defaultValue: true, required: false)
-		input("debugOutput", "bool", title: "Enable Debug logging?", defaultValue: true, required: false)
-    }
-        
-    section ("") {
-    	//input name: "about", type: "paragraph", element: "paragraph", title: "$state", description: ""  
-		myString = getLastEvents()
-       	paragraph "Last Reported Temperature Event<hr>" + myString + "<hr>"
+       	input "createLogEntry", "bool", title: "Create a log entry when check fails?", defaultValue: false, required: false, width:3, submitOnChange: true
+       	if(createLogEntry)
+   	   	{
+       		input "logWarnError", "bool", title: "Select for log.Error (on) - log.Warning when (off)?", defaultValue: false, required: false, width:3
+       	}
+   		paragraph "<hr>"
+        input "logOutput", "bool", title: "Enable App logging?", defaultValue: false, required: false,width:3
+		input "debugOutput", "bool", title: "Enable Debug logging?", defaultValue: false, required: false,width:3
+       	paragraph "<hr>"
+        if(appCreated) {
+			strEvents = getLastEvents()
+	       	paragraph "Last Reported Temperature Event<hr>" + strEvents + "<hr>"
+        }
     }	
   }
 }
@@ -80,6 +87,8 @@ def installed() {
 def updated() {
     if(debugOutput) logMsg("*** Updated with settings: ${settings}")
     MainHandler()
+    //reset the Instructions so not opened when loading page
+    app.updateSetting("Instructions", [value:"false", type:"bool"])
 }
 
 def uninstalled() {
@@ -90,11 +99,14 @@ def uninstalled() {
 
 def initialize() {
 	if(debugOutput) logMsg("*** Initializing App")
+    updated()
+    //setup only 
+    state.created = "true"
 }
 
 void MainHandler()
 {
-	if(debugOutput) logMsg("*** MainHandler - Start")
+    if(debugOutput) logMsg("*** MainHandler - Start")
     
     unsubscribe()
     
@@ -120,6 +132,8 @@ void MainHandler()
             devMap = [:]  //needed to creat a new Map entry
 
             devMap.Name = strName
+            if(debugOutput) logMsg("New strName: " + strName)
+            if(debugOutput) logMsg("New Map - Name: " + strName)
         	if(debugOutput) logMsg("Name: " + devMap.Name)
 
             devMap.Temp = it.currentValue("temperature")
@@ -142,13 +156,16 @@ void MainHandler()
     }
        
     def savedSchedule = state.savedSchedule
-    state.clear()  // clear the state of entries and then recreate them. Necessary to account for removed devices 
-    if(debugOutput) logMsg("iNum = ${iNum}")
-    for (int i = 1; i <=  iNum; i++) {
-    	if(debugOutput) logMsg("reCreate Map entry: " + newMap[i])
-        stateEntry(newMap[i].Name, newMap[i].Temp, newMap[i].Time)
+    def savedCreated = state.created
+    
+   	state.clear()  // clear the state of entries and then recreate them. Necessary to account for removed devices 
+   	if(debugOutput) logMsg("iNum = ${iNum}")
+   	for (int i = 1; i <=  iNum; i++) {
+   		if(debugOutput) logMsg("reCreate Map entry: " + newMap[i])
+       	stateEntry(newMap[i].Name, newMap[i].Temp, newMap[i].Time)
 	}
-    state.savedSchedule = savedSchedule
+   	state.savedSchedule = savedSchedule        
+   	state.created = savedCreated
         
     if(debugOutput) logMsg("Device Count: " + iDeviceCnt)
     if(iDeviceCnt == 0) //only run to schedule 1st time devices selected
@@ -171,11 +188,11 @@ void MainHandler()
         if(debugOutput || logOutput) logMsg("Schedule changed so create new Job for running checks")
         NextScheludedRun()
     }
+    //save below for testing
     //NextScheludedRun()
     //checkSchedule()
     
     if(debugOutput) logMsg("*** MainHandler - End")
-
 }
 
 def stateEntry(def sName, def sTemp, def sTime)
@@ -198,7 +215,6 @@ def stateEntry(def sName, def sTemp, def sTime)
     state."$sName" = devMap
   	
     if(debugOutput) logMsg("*** stateEntry - End")
-
 }
 
 void eventHandler(evt)
@@ -284,7 +300,15 @@ void checkSchedule()
                 myMessage =  "Failed - Temperature Time Check for: " + strName
                 if(createLogEntry)
                 {
-                	log.warning "$strName Failed Temperature Check"
+                	if(logWarnError)
+                    {
+                    	log.error "$strName Failed Temperature Check"
+                    }
+                    else
+                    	{
+                    		log.warn "$strName Failed Temperature Check"
+                        }
+                   if(debugOutput || logOutput) logMsg("Log entry created for - " + myMessage) 
                 }
         		if (sendPushMessage)
         		{
@@ -330,18 +354,19 @@ def NextScheludedRun() {
     if(debugOutput) logMsg("*** NextScheludedRun - Start")
     
     def currDateTime = new Date() 
-    def intCheckMinutes = IntervalCheckMinutes.toInteger()
+    int intCheckMinutes = IntervalCheckMinutes as int
     if(debugOutput) logMsg("Minutes to Increase: " + intCheckMinutes)
+
     use (TimeCategory)
     {
-        currDateTime = currDateTime + intCheckMinutes.minutes
+        NextSchDateTime = currDateTime + intCheckMinutes.minutes
     }
-    if(debugOutput) logMsg("Next Scheduled Time" + currDateTime)
+    if(debugOutput) logMsg("Next Scheduled Time" + NextSchDateTime)
     
     // break out parts for cron expression in schedule command 
-    def srhours = currDateTime.hours
-    def srminutes = currDateTime.minutes
-    def srday = currDateTime.date
+    def srhours = NextSchDateTime.hours
+    def srminutes = NextSchDateTime.minutes
+    def srday = NextSchDateTime.date
     if(debugOutput) logMsg("Next Scheduled Check hours: " + srhours)
     if(debugOutput) logMsg("Next Scheduled Check minutes: " + srminutes)
     if(debugOutput) logMsg("Next Scheduled Check day: " + srday)
@@ -497,7 +522,6 @@ def CompareTimes(starting, ending, dTime = null) {
     if(debugOutput) logMsg("*** CompareTimes - End")
     
     return start < stop ? currTime >= start && currTime <= stop : currTime <= stop || currTime >= start
-
 }
 
 def logMsg(msg) 
