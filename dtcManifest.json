@@ -1,0 +1,27 @@
+{
+  "packageName": "Device Temperature Check",
+  "author": "Scott Wade",
+  "version": "1.0",
+  "minimumHEVersion": "2.1.9",
+  "dateReleased": "2025-03-17",
+  "apps": [
+    {
+      "id": "54457e5f-1d23-49c0-b87e-4101cde44e39",
+      "name": "Device Temperature Check",
+      "namespace": "myHubitat",
+      "location": "https://raw.githubusercontent.com/DolFan81/DeviceTemperatureCheck/refs/heads/main/DeviceTemperatureCheck.groovy",
+      "required": true,
+      "oauth": false,
+      "primary": false
+    },
+    {
+      "id": "404b937f-424b-4a97-91da-fcebb7b2f8ae",
+      "name": "DTCchildApp",
+      "namespace": "myHubitat",
+      "location": "https://raw.githubusercontent.com/DolFan81/DeviceTemperatureCheck/refs/heads/main/DTCchildApp.groovy",
+      "required": true,
+      "oauth": false,
+      "primary": false
+    }
+  ]
+}
