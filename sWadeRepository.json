@@ -6,8 +6,8 @@
       "id": "94cf3239-d2e8-46a6-802f-567b53305802",
       "name": "Device Temperature Check",
       "category": "Utility",
-      "location": "https://raw.githubusercontent.com/DolFan81/DeviceTemperatureCheck/refs/heads/main/dtcManifest.json",
-      "description": "Keep an eye on device temperature reports"
+      "location": "https://raw.githubusercontent.com/DolFan81/hubitat-packages/refs/heads/main/dtcManifest.json",
+      "description": "Keep an eye on device temperature reporting"
     }
   ]
 }
