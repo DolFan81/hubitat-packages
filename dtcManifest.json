@@ -9,7 +9,7 @@
       "id": "54457e5f-1d23-49c0-b87e-4101cde44e39",
       "name": "Device Temperature Check",
       "namespace": "myHubitat",
-      "location": "https://raw.githubusercontent.com/DolFan81/DeviceTemperatureCheck/refs/heads/main/DeviceTemperatureCheck.groovy",
+      "location": "https://raw.githubusercontent.com/DolFan81/hubitat-packages/refs/heads/main/DeviceTemperatureChecks/DeviceTemperatureCheck.groovy",
       "required": true,
       "oauth": false,
       "primary": false
@@ -18,7 +18,7 @@
       "id": "404b937f-424b-4a97-91da-fcebb7b2f8ae",
       "name": "DTCchildApp",
       "namespace": "myHubitat",
-      "location": "https://raw.githubusercontent.com/DolFan81/DeviceTemperatureCheck/refs/heads/main/DTCchildApp.groovy",
+      "location": "https://raw.githubusercontent.com/DolFan81/hubitat-packages/refs/heads/main/DeviceTemperatureChecks/DTCchildApp.groovy",
       "required": true,
       "oauth": false,
       "primary": false
