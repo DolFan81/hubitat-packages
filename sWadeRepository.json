@@ -11,7 +11,7 @@
 	"Monitoring",
 	"Notifications",
 	"Tools & Utilities"
-      ]
+      ],
       "location": "https://raw.githubusercontent.com/DolFan81/hubitat-packages/refs/heads/main/dtcManifest.json",
       "description": "Keep an eye on device temperature reporting"
     }
