@@ -19,6 +19,7 @@
  *    2025-03-08    s.wade			create parent and child framework
 */
 
+static String getVersion()	{  return '1.0.1'  }
 definition(
     name: "Device Temperature Check",
     namespace: "myHubitat",
@@ -49,7 +50,8 @@ preferences {
 				{
         			strInstrucions = getInstructions()
        				paragraph "<hr>App Instructions<hr>" + strInstrucions + "<hr>"
-        		}          
+        		}
+                paragraph "<hr><div style='color:black;text-align:center'>version ${getVersion()}<br><small>Copyright \u00a9 2024-2025 &emsp;-&emsp; All rights reserved.</small><br></div>"
        		}
       }
       else
@@ -57,7 +59,8 @@ preferences {
 			section("")
           	{
           		paragraph "<hr>Click Done to finish installing the App<hr>"
-          	}
+				paragraph "<hr><div style='color:black;text-align:center'>version ${getVersion()}<br><small>Copyright \u00a9 2024-2025 &emsp;-&emsp; All rights reserved.</small><br></div>" 	         	
+            }
       }
   }
 }
