@@ -25,6 +25,7 @@
  *    2025-03-12   	s.wade	    	code cleanup before release
 */
 
+static String getVersion()	{  return '1.0.1'  }
 import groovy.time.TimeCategory
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -75,6 +76,7 @@ preferences {
 			strEvents = getLastEvents()
 	       	paragraph "Last Reported Temperature Event<hr>" + strEvents + "<hr>"
         }
+        paragraph "<hr><div style='color:black;text-align:center'>version ${getVersion()}<br><small>Copyright \u00a9 2024-2025 &emsp;-&emsp; All rights reserved.</small><br></div>"
     }	
   }
 }
