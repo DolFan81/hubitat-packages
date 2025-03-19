@@ -30,39 +30,57 @@ definition(
     iconX3Url: "")
 
 preferences {
-  page(name: "mainAppPage", install: true, uninstall: true) {
-   	section("")
+  page(name: "mainAppPage", install: true, uninstall: true) 
     {
-	    app name: "DTCchildApp", appName: "DTCchildApp", namespace: "myHubitat", title: "Add New Group of Devices", multiple: true
-    }
-    section("") {
-	    input "Instructions", "bool", title: "Show app Instructions", defaultValue: false, required: false, submitOnChange: true
-   		if(Instructions == true)
-		{
-        	strInstrucions = getInstructions()
-       		paragraph "<hr>App Instructions<hr>" + strInstrucions + "<hr>"
-        }          
-    }    
+
+    	appCreated = false
+    	//log.info "b.Created: " + appCreated
+    	if(state.created != null){ appCreated = state.created }      
+    
+    	if(appCreated) {
+			section("")
+    		{
+	    		app name: "DTCchildApp", appName: "DTCchildApp", namespace: "myHubitat", title: "Add New Group of Devices", multiple: true
+    		}
+    		section("")
+            {
+	    		input "Instructions", "bool", title: "Show app Instructions", defaultValue: false, required: false, submitOnChange: true
+   				if(Instructions == true)
+				{
+        			strInstrucions = getInstructions()
+       				paragraph "<hr>App Instructions<hr>" + strInstrucions + "<hr>"
+        		}          
+       		}
+      }
+      else
+      {
+			section("")
+          	{
+          		paragraph "<hr>Click Done to finish installing the App<hr>"
+          	}
+      }
   }
 }
 
 def installed() {
-	logMsg("Installed App")
+	logMsg("Installed Device Temperature Check App")
 	initialize()
 }
 
 def updated() {
-    initialize()
 }
 
 def uninstalled() {
-	logMsg("Uninstalled App")
+	logMsg("Uninstalled Device Temperature CheckApp")
     // unsubscribe to all events
     unschedule()
     unsubscribe()
 }
 
 def initialize() {
+    updated()
+    //setup only 
+    state.created = "true"
 }
 
 def getInstructions()
