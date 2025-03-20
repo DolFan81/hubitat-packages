@@ -19,7 +19,7 @@
  *    2025-03-08    s.wade			create parent and child framework
 */
 
-static String getVersion()	{  return '1.0.1'  }
+static String getVersion()	{  return '1.0.2'  }
 definition(
     name: "Device Temperature Check",
     namespace: "myHubitat",
