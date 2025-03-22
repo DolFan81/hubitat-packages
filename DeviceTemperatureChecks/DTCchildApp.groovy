@@ -25,7 +25,7 @@
  *    2025-03-12   	s.wade	    	code cleanup before release
 */
 
-static String getVersion()	{  return '1.0.1'  }
+static String getVersion()	{  return '1.0.2'  }
 import groovy.time.TimeCategory
 import java.time.ZoneId
 import java.time.ZonedDateTime
