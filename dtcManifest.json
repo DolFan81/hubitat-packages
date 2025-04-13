@@ -1,7 +1,7 @@
 {
   "packageName": "Device Temperature Check",
   "author": "Scott Wade",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "minimumHEVersion": "2.1.9",
   "dateReleased": "2025-03-17",
   "releaseNotes": "v1.0.3 - added rescheuling after hub reboots<br?added logic to improve device scheduling",
