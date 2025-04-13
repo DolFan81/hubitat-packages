@@ -4,7 +4,7 @@
   "version": "1.0.3",
   "minimumHEVersion": "2.1.9",
   "dateReleased": "2025-04-13",
-  "releaseNotes": "v1.0.3 - added rescheuling after hub reboots<br?added logic to improve device scheduling",
+  "releaseNotes": "v1.0.3 - added rescheuling after hub reboots<br>added logic to improve device scheduling",
   "apps": [
     {
       "id": "54457e5f-1d23-49c0-b87e-4101cde44e39",
