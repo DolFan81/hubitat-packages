@@ -23,12 +23,12 @@
  *    ----         	---           	----
  *    2025-03-09    s.wade			add quiet time modules/logic
  *    2025-03-12   	s.wade	    	code cleanup before release
+ *    2025-03-31   	s.wade	    	improve scheduling code
+ *    2025-04-03   	s.wade	    	added code to reschedule device checks after hub reboots
 */
 
-static String getVersion()	{  return '1.0.2'  }
+static String getVersion()	{  return '1.0.3'  }
 import groovy.time.TimeCategory
-import java.time.ZoneId
-import java.time.ZonedDateTime
 
 definition(
     name: "DTCchildApp",
@@ -38,15 +38,14 @@ definition(
     description: "Notify if Device Temperature not reported in X minutes",
     category: "Utility",
     iconUrl: "",
-    iconX2Url: "")
+    iconX2Url: "",
+    iconX3Url: "",
+   	importUrl: "https://raw.githubusercontent.com/DolFan81/hubitat-packages/refs/heads/main/DeviceTemperatureChecks/DTCchildApp.groovy"
+)
 
 preferences {
   page(name: "pageMain", install: true, uninstall: true) 
   {
-	appCreated = false
-    //log.info "b.Created: " + appCreated
-    if(state.created != null){ appCreated = state.created }
-    //log.info "a.Created: " + appCreated
     section("")
     {
         label title: "Customize installed child app name:", required: true
@@ -72,12 +71,16 @@ preferences {
         input "logOutput", "bool", title: "Enable App logging?", defaultValue: false, required: false,width:3
 		input "debugOutput", "bool", title: "Enable Debug logging?", defaultValue: false, required: false,width:3
        	paragraph "<hr>"
-        if(appCreated) {
+    	
+      
+		//log.info app.getInstallationState()
+		if (app.getInstallationState() == 'COMPLETE') {
+			// Make sure the app has completed install (don't run thid the first time child app runs) 
 			strEvents = getLastEvents()
-	       	paragraph "Last Reported Temperature Event<hr>" + strEvents + "<hr>"
-        }
+       		paragraph "Last Reported Temperature Event<hr>" + strEvents + "<hr>"
+    	}
         paragraph "<hr><div style='color:black;text-align:center'>version ${getVersion()}<br><small>Copyright \u00a9 2024-2025 &emsp;-&emsp; All rights reserved.</small><br></div>"
-    }	
+	}	
   }
 }
 
@@ -102,8 +105,12 @@ def uninstalled() {
 def initialize() {
 	if(debugOutput) logMsg("*** Initializing App")
     updated()
-    //setup only 
-    state.created = "true"
+}
+
+def hubRestartHandler(evt)
+{
+    log.info "${app.getName()} - v${getVersion()} initialized"
+    NextScheludedRun()
 }
 
 void MainHandler()
@@ -111,6 +118,8 @@ void MainHandler()
     if(debugOutput) logMsg("*** MainHandler - Start")
     
     unsubscribe()
+    //make sure to re-subscribe back to monitor for system starts.
+    subscribe(location, "systemStart", hubRestartHandler)
     
     iDeviceCnt = DeviceCount()
     
@@ -158,7 +167,7 @@ void MainHandler()
     }
        
     def savedSchedule = state.savedSchedule
-    def savedCreated = state.created
+    //def savedCreated = state.created
     
    	state.clear()  // clear the state of entries and then recreate them. Necessary to account for removed devices 
    	if(debugOutput) logMsg("iNum = ${iNum}")
@@ -167,7 +176,7 @@ void MainHandler()
        	stateEntry(newMap[i].Name, newMap[i].Temp, newMap[i].Time)
 	}
    	state.savedSchedule = savedSchedule        
-   	state.created = savedCreated
+   	//state.created = savedCreated
         
     if(debugOutput) logMsg("Device Count: " + iDeviceCnt)
     if(iDeviceCnt == 0) //only run to schedule 1st time devices selected
@@ -369,14 +378,29 @@ def NextScheludedRun() {
     def srhours = NextSchDateTime.hours
     def srminutes = NextSchDateTime.minutes
     def srday = NextSchDateTime.date
+    def srmonth = NextSchDateTime.format('MM') as int
     if(debugOutput) logMsg("Next Scheduled Check hours: " + srhours)
     if(debugOutput) logMsg("Next Scheduled Check minutes: " + srminutes)
     if(debugOutput) logMsg("Next Scheduled Check day: " + srday)
+    if(debugOutput) logMsg("Next Scheduled Check month: " + srmonth)
     
-    schedule("00 $srminutes $srhours $srday * ? *", checkSchedule)
+    schedule("00 $srminutes $srhours $srday $srmonth ? *", checkSchedule)
     
     state.savedSchedule = IntervalCheckMinutes
     if(debugOutput) logMsg("Saved Interval: " + state.savedSchedule)
+    
+    def elapsedMilliSeconds = NextSchDateTime.getTime() - currDateTime.getTime()
+    int sMinutes = elapsedMilliSeconds/60000
+    int sMinuteDiff = sMinutes - intCheckMinutes
+    
+    if(sMinuteDiff != 0)
+    {
+		if(debugOutput) logMsg("Time Diff: " + sMinuteDiff)
+    }
+    else
+    {
+		if(debugOutput) logMsg("No Time Diff: " + sMinuteDiff)
+    }
     
     if(debugOutput) logMsg("*** NextScheludedRun - End")
 }
