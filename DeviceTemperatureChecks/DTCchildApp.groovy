@@ -55,14 +55,14 @@ preferences {
        	if(sendPushMessage)
        	{
         	input "optionQuietTime", "bool", title: "Set a quiet time for notifications?", defaultValue: false, required: false, submitOnChange: true
-	    	if(optionQuietTime)
-   			{
-   				input "startQuietTime", "Time", title: "Select Start Time?", defaultValue: false, required: true
-   				input "endQuietTime", "Time", title: "Select End Time?", defaultValue: false, required: true
-   			}
-   			paragraph "<hr>"
         }
-       	input "createLogEntry", "bool", title: "Create a log entry when check fails?", defaultValue: false, required: false, width:3, submitOnChange: true
+	    if(optionQuietTime)
+   		{
+   			input "startQuietTime", "Time", title: "Select Start Time?", defaultValue: false, required: true, width:3
+   			input "endQuietTime", "Time", title: "Select End Time?", defaultValue: false, required: true, width:3
+   		}
+   		paragraph "<hr>"       	
+        input "createLogEntry", "bool", title: "Create a log entry when check fails?", defaultValue: false, required: false, width:3, submitOnChange: true
        	if(createLogEntry)
    	   	{
        		input "logWarnError", "bool", title: "Select for log.Error (on) - log.Warning when (off)?", defaultValue: false, required: false, width:3
