@@ -20,7 +20,7 @@
  *    2025-04-03    s.wade			added importURL to App code
 */
 
-static String getVersion()	{  return '1.0.3'  }
+static String getVersion()	{  return '1.0.4'  }
 definition(
     name: "Device Temperature Check",
     namespace: "myHubitat",
