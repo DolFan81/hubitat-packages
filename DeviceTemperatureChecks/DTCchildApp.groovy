@@ -25,9 +25,10 @@
  *    2025-03-12   	s.wade	    	code cleanup before release
  *    2025-03-31   	s.wade	    	improve scheduling code
  *    2025-04-03   	s.wade	    	added code to reschedule device checks after hub reboots
+ *    2025-04-15   	s.wade	    	fixed syntax preventing quiet time entry
 */
 
-static String getVersion()	{  return '1.0.3'  }
+static String getVersion()	{  return '1.0.4'  }
 import groovy.time.TimeCategory
 
 definition(
@@ -167,7 +168,6 @@ void MainHandler()
     }
        
     def savedSchedule = state.savedSchedule
-    //def savedCreated = state.created
     
    	state.clear()  // clear the state of entries and then recreate them. Necessary to account for removed devices 
    	if(debugOutput) logMsg("iNum = ${iNum}")
@@ -176,7 +176,6 @@ void MainHandler()
        	stateEntry(newMap[i].Name, newMap[i].Temp, newMap[i].Time)
 	}
    	state.savedSchedule = savedSchedule        
-   	//state.created = savedCreated
         
     if(debugOutput) logMsg("Device Count: " + iDeviceCnt)
     if(iDeviceCnt == 0) //only run to schedule 1st time devices selected
