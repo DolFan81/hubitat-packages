@@ -49,11 +49,13 @@
  * v0.7.6	RLE		Added logic to discard erroneous energy reportings over 500 kWh. Unify menu color scheme.
  * v0.8.0	swade	Changed erroneous engery level to 100 and added code to prevent adding any energy cost over 10 cents, added Version to mainPage
  * v0.8.1	thebearmay	Added max energy per device 
+ * v0.8.2	swade	Corrected code to ignore when negative value reported
+ * v0.8.3	swade	Added code to update Device Map values
  */
 
 import java.util.regex.*
 
-static String getVersion()	{  return '0.8.1'  }
+static String getVersion()	{  return '0.8.3'  }
 definition(
     name: "Energy Cost Calculator",
     namespace: "rle",
@@ -69,6 +71,7 @@ preferences {
 	page(name: "pageSelectVariables")
 	page(name: "pageSetRateSchedule")
 	page(name: "advancedOptions")
+	page(name: "deviceMapUpdate")
 }
 
 def mainPage() {
@@ -98,6 +101,11 @@ def mainPage() {
 		app.removeSetting("resetOptionZero")
 		app.removeSetting("deviceResetSelection")
 		app.removeSetting("deviceOptionReset")
+		}
+    
+    //confirmationUpdateDeviceMap
+	if(confirmationUpdateDeviceMap == "Yes") {updateDeviceMap()} else if(confirmationUpdateDeviceMap == "No") {
+		app.removeSetting("confirmationUpdateDeviceMap") 
 		}
 
 
@@ -148,6 +156,9 @@ def mainPage() {
 					paragraph ""
 					
 					href(name: "hrefAdvancedOptions", title: getFormat("importantBold","Click here to access advanced options/utilities"),description: "", page: "advancedOptions", width:4,newLineAfter:true)
+					paragraph ""
+					
+					href(name: "hrefdeviceMapUpdate", title: getFormat("importantBold","Click here to Update a Device Map"),description: "", page: "deviceMapUpdate", width:4,newLineAfter:true)
 				}
 			}
 		} else {
@@ -156,6 +167,198 @@ def mainPage() {
 			}
 		}
 	}
+}
+
+def deviceMapUpdate() {
+
+    resetDeviceList = []
+	energies.each {dev ->
+	resetDeviceList.add(dev.displayName)}
+    resetDeviceList.sort()
+    app.removeSetting("newlastEnergy")
+    app.removeSetting("newthisWeekCost")
+    app.removeSetting("newmonthStart")
+    app.removeSetting("newthisMonthCost")
+    app.removeSetting("newthisMonthEnergy")
+    app.removeSetting("newtodayCost")
+    app.removeSetting("newenergyChange")
+    app.removeSetting("newthisWeekEnergy")
+    app.removeSetting("newyesterdayEnergy")
+    app.removeSetting("newdayStart")
+    app.removeSetting("newweekStart")
+    app.removeSetting("newlastWeekEnergy")
+    app.removeSetting("newlastMonthEnergy")
+    app.removeSetting("newtodayEnergy")
+    
+	dynamicPage(name: "deviceMapUpdate",title:getFormat("header","Device Map Update"), uninstall: false, install: false, nextPage: "mainPage") {
+		section(getFormat("importantBold","Something here - was, Set the Monthly Reset Day"),hideable:true,hidden:false) 
+        {
+            input "deviceResetSelection", "enum", title: getFormat("important","Which Device Map do you want to Change?"), options: resetDeviceList, required: false, width: 4, submitOnChange: true
+            state.deviceUpdateSelection = deviceResetSelection
+            //log.info "Device Selection is ${state.deviceUpdateSelection}"
+			if(deviceResetSelection) 
+        	{
+				//put code to get device Map
+				energies.each {lckup -> if(lckup.displayName.contains("${state.deviceUpdateSelection}")) idResetDevice = lckup.id }
+    			logTrace "Device ID is ${idResetDevice}"
+                state.idResetDevice = idResetDevice
+			    //log.info "Device ID is ${state.idResetDevice}"
+    
+			    deviceForReset = state.energies["$idResetDevice"]
+				mLastEnergy = deviceForReset.lastEnergy
+				mthisWeekCost = deviceForReset.thisWeekCost
+				mmonthStart = deviceForReset.monthStart
+				mthisMonthCost = deviceForReset.thisMonthCost
+				mthisMonthEnergy = deviceForReset.thisMonthEnergy
+				mtodayCost = deviceForReset.todayCost
+				menergyChange = deviceForReset.energyChange
+				mthisWeekEnergy = deviceForReset.thisWeekEnergy
+				myesterdayEnergy = deviceForReset.yesterdayEnergy
+				mdayStart = deviceForReset.dayStart
+				mweekStart = deviceForReset.weekStart
+				mlastWeekEnergy = deviceForReset.lastWeekEnergy
+                mlastMonthEnergy = deviceForReset.lastMonthEnergy
+				mtodayEnergy = deviceForReset.todayEnergy
+                
+				paragraph "<br>"               
+               	input "newlastEnergy", "decimal", title: getFormat("header","Last Energy:"), required: false, width: 4, submitOnChange: false
+				paragraph getFormat("lessImportant","Current Last Energy: ${mLastEnergy}")
+                input "newthisWeekCost", "string", title: getFormat("header","This Week Cost:"), required: false, width: 4, submitOnChange: false
+                paragraph getFormat("lessImportant","Current This Week Cost: ${mthisWeekCost}")
+                input "newmonthStart", "string", title: getFormat("header","Month Start:"), required: false, width: 4, submitOnChange: false
+   				paragraph getFormat("lessImportant","Current Month Star: ${mmonthStart}")
+               	input "newthisMonthCost", "string", title: getFormat("header","Month Cost:"), required: false, width: 4, submitOnChange: false
+				paragraph getFormat("lessImportant","Current Month Cost: ${mthisMonthCost}")
+                input "newthisMonthEnergy", "string", title: getFormat("header","Month Energy:"), required: false, width: 4, submitOnChange: false
+                paragraph getFormat("lessImportant","Current This Month Energy: ${mthisMonthEnergy}")
+                input "newtodayCost", "string", title: getFormat("header","Today Cost:"), required: false, width: 4, submitOnChange: false
+   				paragraph getFormat("lessImportant","Current Today Cost: ${mtodayCost}")
+               	input "newenergyChange", "string", title: getFormat("header","Energy Change:"), required: false, width: 4, submitOnChange: false
+				paragraph getFormat("lessImportant","Current Energy Change: ${menergyChange}")
+                input "newthisWeekEnergy", "string", title: getFormat("header","This Week Energy:"), required: false, width: 4, submitOnChange: false
+                paragraph getFormat("lessImportant","Current This Week Energy: ${mthisWeekEnergy}")
+                input "newyesterdayEnergy", "string", title: getFormat("header","Yesterday Energy:"), required: false, width: 4, submitOnChange: false
+   				paragraph getFormat("lessImportant","Current Yesterday Energy: ${myesterdayEnergy}")
+               	input "newdayStart", "string", title: getFormat("header","Day Start:"), required: false, width: 4, submitOnChange: false
+				paragraph getFormat("lessImportant","Current Day Start: ${mdayStart}")
+                input "newweekStart", "string", title: getFormat("header","Week Start:"), required: false, width: 4, submitOnChange: false
+                paragraph getFormat("lessImportant","Current Week Start: ${mweekStart}")
+                input "newlastWeekEnergy", "string", title: getFormat("header","Last Week Energy:"), required: false, width: 4, submitOnChange: false
+   				paragraph getFormat("lessImportant","Current Last Week Energy: ${mlastWeekEnergy}")
+               	input "newlastMonthEnergy", "string", title: getFormat("header","Last Month Energy:"), required: false, width: 4, submitOnChange: false
+				paragraph getFormat("lessImportant","Current Last Month Enerfy: ${mlastMonthEnergy}")
+                input "newtodayEnergy", "string", title: getFormat("header","Today Energy:"), required: false, width: 4, submitOnChange: false
+                paragraph getFormat("lessImportant","Current Today Energy: ${mtodayEnergy}")
+                paragraph "<br>"               
+                input "confirmationUpdateDeviceMap", "enum", title: getFormat("important2Bold","*** Are you sure you want to reset? ***"), options: ["Yes","No"], required: false, width: 4, submitOnChange: false
+			}
+        }
+    }
+}
+
+def updateDeviceMap () {
+
+    //log.info "Device ID to Reset is ${state.idResetDevice}"
+    deviceForReset = state.idResetDevice
+    
+    //log.info "Update -- new today cost is ${newtodayCost}"
+	energies.each {myDev -> if(myDev.id.contains("${deviceForReset}")) myResetDevice = myDev.id }
+    logTrace "Device ID is ${myResetDevice}"
+    //log.info "Device ID is ${myResetDevice}"
+    
+    mydeviceForReset = state.energies["$myResetDevice"]
+    logTrace "Device: ${mydeviceForReset}"
+    //log.info "Device: ${mydeviceForReset}"
+    
+    //myTest = mydeviceForReset.todayCost
+    //log.info "Before today cost: " + myTest
+    
+    if(newlastEnergy) 
+    {
+        mydeviceForReset.lastEnergy = newlastEnergy.toBigDecimal()
+	    logTrace "Update Last Energy: " + newlastEnergy.toBigDecimal()
+		app.removeSetting("newlastEnergy") 
+    }
+    if(newthisWeekCost) 
+    {
+        mydeviceForReset.thisWeekCost = newthisWeekCost.toBigDecimal()
+	    logTrace "Update this Week Cost: " + newthisWeekCost.toBigDecimal()
+		app.removeSetting("newthisWeekCost") 
+    }
+    if(newmonthStart) 
+    {
+        mydeviceForReset.monthStart = newmonthStart.toBigDecimal()
+	    logTrace "Update Month Start: " + newmonthStart.toBigDecimal()
+		app.removeSetting("newmonthStart") 
+    }
+    if(newthisMonthCost) 
+    {
+        mydeviceForReset.thisMonthCost = newthisMonthCost.toBigDecimal()
+	    logTrace "Update this Month Cost: " + newthisMonthCost.toBigDecimal()
+		app.removeSetting("newthisMonthCost") 
+    }
+    if(newthisMonthEnergy) 
+    {
+        mydeviceForReset.thisMonthEnergy = newthisMonthEnergy.toBigDecimal()
+	    logTrace "Update this Month Energy: " + newthisMonthEnergy.toBigDecimal()
+		app.removeSetting("newthisMonthEnergy") 
+    }
+    if(newtodayCost) 
+    {
+        mydeviceForReset.todayCost = newtodayCost.toBigDecimal()
+	    logTrace "Update today cost: " + newtodayCost.toBigDecimal()
+		app.removeSetting("newtodayCost") 
+    }
+    if(newenergyChange) 
+    {
+        mydeviceForReset.energyChange = newenergyChange.toBigDecimal()
+	    logTrace "Update Energy Change: " + newenergyChange.toBigDecimal()
+		app.removeSetting("newenergyChange") 
+    }
+    if(newthisWeekEnergy) 
+    {
+        mydeviceForReset.thisWeekEnergy = newthisWeekEnergy.toBigDecimal()
+	    logTrace "Update this Week Energy: " + newthisWeekEnergy.toBigDecimal()
+		app.removeSetting("newthisWeekEnergy") 
+    }
+    if(newyesterdayEnergy) 
+    {
+        mydeviceForReset.yesterdayEnergy = newyesterdayEnergy.toBigDecimal()
+	    logTrace "Update Yesterday Energy: " + newyesterdayEnergy.toBigDecimal()
+		app.removeSetting("newyesterdayEnergy") 
+    }
+    if(newdayStart) 
+    {
+        mydeviceForReset.dayStart = newdayStart.toBigDecimal()
+	    logTrace "Update Day Start: " + newdayStart.toBigDecimal()
+		app.removeSetting("newdayStart") 
+    }
+    if(newweekStart) 
+    {
+        mydeviceForReset.weekStart = newweekStart.toBigDecimal()
+	    logTrace "Update Week Start: " + newweekStart.toBigDecimal()
+		app.removeSetting("newweekStart") 
+    }
+    if(newlastWeekEnergy) 
+    {
+        mydeviceForReset.lastWeekEnergy = newlastWeekEnergy.toBigDecimal()
+	    logTrace "Update last Week Energy: " + newlastWeekEnergy.toBigDecimal()
+		app.removeSetting("newlastWeekEnergy") 
+    }
+    if(newlastMonthEnergy) 
+    {
+        mydeviceForReset.lastMonthEnergy = newlastMonthEnergy.toBigDecimal()
+	    logTrace "Update last Month Energy: " + newlastMonthEnergy.toBigDecimal()
+		app.removeSetting("newlastMonthEnergy") 
+    }
+    if(newtodayEnergy) 
+    {
+        mydeviceForReset.todayEnergy = newtodayEnergy.toBigDecimal()
+	    logTrace "Update Today Energy: " + newtodayEnergy.toBigDecimal()
+		app.removeSetting("newtodayEnergy") 
+    }
+    
+	app.removeSetting("confirmationUpdateDeviceMap") 
 }
 
 def pageSelectVariables() {
@@ -559,6 +762,7 @@ String displayTable() {
 		lastMonthEnergy = device.lastMonthEnergy.toDouble().round(3)
 
 		//Get cost values, round, and add symbol
+		//todayCost = device.todayCost
 		todayCost = BigDecimal.valueOf(device.todayCost).setScale(2,BigDecimal.ROUND_HALF_UP)
 		thisWeekCost = BigDecimal.valueOf(device.thisWeekCost).setScale(2,BigDecimal.ROUND_HALF_UP)
 		thisMonthCost = BigDecimal.valueOf(device.thisMonthCost).setScale(2,BigDecimal.ROUND_HALF_UP)
@@ -699,6 +903,7 @@ String buttonLink(String btnName, String linkText, color = "#1A77C9", font = "15
 
 void appButtonHandler(btn) {
 	logDebug "btn is ${btn}"
+	log.info "btn is ${btn}"
 	if(btn == "varTodayTotal") state.newTodayTotalVar = btn
 	else if(btn == "noVarTodayTotal") state.remTodayTotalVar = btn
     else if(btn == "varWeekTotal") state.newWeekTotalVar = btn
@@ -805,20 +1010,26 @@ void updateSingleDeviceEnergy(devName,devId) {
    	// evaluate device max settings and set to 500 i=f over individual vale
     if(!settings["${maxVal$devId}"]) app.updateSetting("${maxVal$devId}",[value:500,type:"number"])
 	if(energyCheck > 500 || energyCheck > settings["${maxVal$devId}"]) {
-		log.error "Probable erroneous energy report; (${devName}) with (${energyCheck}); --if this is a valid report, please report this in the community thread."
+		log.error "Probable erroneous energy report; (${devName}) with (${energyCheck}); -- it will be ignored."
 		return 
 	}
     //if(energyCheck > 100) {
-    //    log.error "Probable erroneous energy report; (${devName}) with Energy Reported; (${energyCheck}) -- if this is a valid report, please report this in the community thread."
+    //    log.error "Probable erroneous energy report; (${devName}) with Energy Reported; (${energyCheck}) -- it will be ignored."
 	//	return
 	//	}
+	//if(energyCheck < 0) {
+	//	logInfo "Energy for ${devName} is less than day start; energy was reset; setting day start and last energy to 0"
+	//	device.dayStart = 0
+	//	device.lastEnergy = 0
+	//	todayEnergy = currentEnergy - device.dayStart
+	//} else {todayEnergy = energyCheck}
+
 	if(energyCheck < 0) {
-		logInfo "Energy for ${devName} is less than day start; energy was reset; setting day start and last energy to 0"
-		device.dayStart = 0
-		device.lastEnergy = 0
-		todayEnergy = currentEnergy - device.dayStart
+		log.error "Energy report for ${devName} is less than zero -- ${energyCheck}; Probable erroneous energy report so it will be ignored"
+		return
 	} else {todayEnergy = energyCheck}
-	logTrace "${devName} energy today is ${todayEnergy}"
+    
+    logTrace "${devName} energy today is ${todayEnergy}"
 	
 	lastEnergy = device.lastEnergy
 	logTrace "${devName} lastEnergy is ${lastEnergy}"
