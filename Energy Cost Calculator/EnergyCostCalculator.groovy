@@ -51,11 +51,12 @@
  * v0.8.1	thebearmay	Added max energy per device 
  * v0.8.2	swade	Corrected code to ignore when negative value reported
  * v0.8.3	swade	Added code to update Device Map values
+ * v0.8.4	swade	Modified code for when device energy gets reset to Zero
  */
 
 import java.util.regex.*
 
-static String getVersion()	{  return '0.8.3'  }
+static String getVersion()	{  return '0.8.4'  }
 definition(
     name: "Energy Cost Calculator",
     namespace: "rle",
@@ -1000,34 +1001,37 @@ void updateSingleDeviceEnergy(devName,devId) {
 	thisMonthStart = device.monthStart ?: 0
 	logTrace "${devName} monthStart is ${thisMonthStart}"
 
+    logTrace "Current Energy: ${devName.currentEnergy}" 
 	currentEnergy = devName.currentEnergy ?: 0
 	currentEnergy1 = devName.currentValue("energy")
 	logTrace "${devName} currentEnergy is ${currentEnergy}"
 	//if(currentEnergy != currentEnergy1) {log.error "CurrentEnergy is ${currentEnergy} but currentEnergy1 is ${currentEnergy1}; please report this in the community thread."; log.error "${state}"}
-
+	
 	energyCheck = currentEnergy - start
 	logTrace "${devName} energyCheck is ${energyCheck}"
+
+    if(currentEnergy == 0)
+    {
+        //log.info "Captures Reseting Device Energy Prpoerty"
+        logTrace "Energy for ${devName} is less than day start ${currentEnergy}; energy was reset; setting day start and last energy to 0"
+		device.dayStart = 0
+		device.lastEnergy = 0
+		todayEnergy = currentEnergy - device.dayStart
+    }
+    else
+    {
+		if(energyCheck < 0) {
+			log.error "Energy report for ${devName} is less than zero -- ${energyCheck}; Probable erroneous energy report so it will be ignored"
+			return
+		} else {todayEnergy = energyCheck}
+    }
+    
    	// evaluate device max settings and set to 500 i=f over individual vale
     if(!settings["${maxVal$devId}"]) app.updateSetting("${maxVal$devId}",[value:500,type:"number"])
 	if(energyCheck > 500 || energyCheck > settings["${maxVal$devId}"]) {
 		log.error "Probable erroneous energy report; (${devName}) with (${energyCheck}); -- it will be ignored."
 		return 
 	}
-    //if(energyCheck > 100) {
-    //    log.error "Probable erroneous energy report; (${devName}) with Energy Reported; (${energyCheck}) -- it will be ignored."
-	//	return
-	//	}
-	//if(energyCheck < 0) {
-	//	logInfo "Energy for ${devName} is less than day start; energy was reset; setting day start and last energy to 0"
-	//	device.dayStart = 0
-	//	device.lastEnergy = 0
-	//	todayEnergy = currentEnergy - device.dayStart
-	//} else {todayEnergy = energyCheck}
-
-	if(energyCheck < 0) {
-		log.error "Energy report for ${devName} is less than zero -- ${energyCheck}; Probable erroneous energy report so it will be ignored"
-		return
-	} else {todayEnergy = energyCheck}
     
     logTrace "${devName} energy today is ${todayEnergy}"
 	
