@@ -52,11 +52,12 @@
  * v0.8.2	swade	Corrected code to ignore when negative value reported
  * v0.8.3	swade	Added code to update Device Map values
  * v0.8.4	swade	Modified code for when device energy gets reset to Zero
+ * v0.8.5	swade	Added Yesterday Energy to display
  */
 
 import java.util.regex.*
 
-static String getVersion()	{  return '0.8.4'  }
+static String getVersion()	{  return '0.8.5'  }
 definition(
     name: "Energy Cost Calculator",
     namespace: "rle",
@@ -738,14 +739,15 @@ String displayTable() {
 		" .tstat-col td {font-size:15px } table {border-collapse: collapse;}" +
 		"</style><div style='overflow-x:auto'><table id='main-table' class='mdl-data-table tstat-col cell-border' style='border:3px solid black; background-color:$state.tableBg'>" +
 		"<thead><tr style='border-bottom:3px solid black'><th style='border-right:3px solid black;border-bottom:3px solid black'>Meter</th>" +
-		"<th style='border-bottom:3px solid black'>Energy Use Today</th>" +
+		"<th style='border-right:3px solid black;border-bottom:3px solid black'>Energy Yesterday</th>" +
+		"<th style='border-bottom:3px solid black'>Energy Today</th>" +
 		"<th style='border-right:3px solid black;border-bottom:3px solid black'>Today's Cost</th>" +
-		"<th style='border-bottom:3px solid black'>Energy Use This Week</th>" +
+		"<th style='border-bottom:3px solid black'>Energy This Week</th>" +
 		"<th style='border-bottom:3px solid black'>Energy Cost This Week</th>" +
 		"<th style='border-right:3px solid black;border-bottom:3px solid black'>Energy Use Last Week</th>" +
-		"<th style='border-bottom:3px solid black'>Energy Use This Month</th>" +
+		"<th style='border-bottom:3px solid black'>Energy This Month</th>" +
 		"<th style='border-bottom:3px solid black'>Energy Cost This Month</th>" +
-		"<th style='border-bottom:3px solid black'>Energy Use Last Month</th></tr></thead><tbody>"
+		"<th style='border-bottom:3px solid black'>Energy Last Month</th></tr></thead><tbody>"
 
 	energies.sort{it.displayName.toLowerCase()}.each {dev ->
 
@@ -756,6 +758,7 @@ String displayTable() {
 		device = state.energies["$dev.id"]
 
 		//Get energy values for each device.
+		yesterdayEnergy = device.yesterdayEnergy.toDouble().round(3)
 		todayEnergy = device.todayEnergy.toDouble().round(3)
 		thisWeekEnergy = device.thisWeekEnergy.toDouble().round(3)
 		thisMonthEnergy = device.thisMonthEnergy.toDouble().round(3)
@@ -775,6 +778,7 @@ String displayTable() {
 		//Build display strings
 		String devLink = "<a href='/device/edit/$dev.id' target='_blank' title='Open Device Page for $dev'>$dev"
 		str += "<tr style='color:black;border-top:1px solid black'><td style='border-right:3px solid black'>$devLink</td>" +
+			"<td style='border-right:3px solid black;color:#be05f5'><b>$yesterdayEnergy</b></td>" +
 			"<td style='color:#be05f5'><b>$todayEnergy</b></td>" +
 			"<td style='border-right:3px solid black;color:#be05f5' title='Money spent running ${dev}'><b>$todayCost</b></td>" +
 			"<td style='color:#007cbe'><b>$thisWeekEnergy</b></td>" +
@@ -785,7 +789,8 @@ String displayTable() {
 			"<td style='color:#5a8200'><b>$lastMonthEnergy</b></td></tr>"
 	}
 	//Get total energy values
-	todayTotalEnergy = state.todayTotalEnergy.toDouble().round(3)
+	yesterdayTotalEnergy = state.yesterdayTotal.toDouble().round(3)
+    todayTotalEnergy = state.todayTotalEnergy.toDouble().round(3)
 	thisWeekTotal = state.thisWeekTotal.toDouble().round(3)
 	thisMonthTotal = state.thisMonthTotal.toDouble().round(3)
 	lastWeekTotal = state.lastWeekTotal ?: 0 
@@ -805,6 +810,7 @@ String displayTable() {
 	//Build display string
 	str += "</tbody>"
     str += "<tr style='border-top:3px solid black'><td style='border-right:3px solid black;border-top:3px solid black'>Total</td>" +
+			"<td style='color:#be05f5;border-right:3px solid black;border-top:3px solid black'><b>$yesterdayTotalEnergy</b></td>" +
 			"<td style='color:#be05f5;border-top:3px solid black'><b>$todayTotalEnergy</b></td>" +
 			"<td style='border-right:3px solid black;color:#be05f5;border-top:3px solid black' title='Money spent running $dev'><b>$totalCostToday</b></td>" +
 			"<td style='color:#007cbe;border-top:3px solid black'><b>$thisWeekTotal</b></td>" +
