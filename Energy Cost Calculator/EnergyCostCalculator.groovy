@@ -53,11 +53,12 @@
  * v0.8.3	swade	Added code to update Device Map values
  * v0.8.4	swade	Modified code for when device energy gets reset to Zero
  * v0.8.5	swade	Added Yesterday Energy to display
+ * v0.8.6	swade	Added Yesterday Energy Total to calculate totals
  */
 
 import java.util.regex.*
 
-static String getVersion()	{  return '0.8.5'  }
+static String getVersion()	{  return '0.8.6'  }
 definition(
     name: "Energy Cost Calculator",
     namespace: "rle",
@@ -778,7 +779,7 @@ String displayTable() {
 		//Build display strings
 		String devLink = "<a href='/device/edit/$dev.id' target='_blank' title='Open Device Page for $dev'>$dev"
 		str += "<tr style='color:black;border-top:1px solid black'><td style='border-right:3px solid black'>$devLink</td>" +
-			"<td style='border-right:3px solid black;color:#be05f5'><b>$yesterdayEnergy</b></td>" +
+			"<td style='border-right:3px solid black;color:#f88f05'><b>$yesterdayEnergy</b></td>" +
 			"<td style='color:#be05f5'><b>$todayEnergy</b></td>" +
 			"<td style='border-right:3px solid black;color:#be05f5' title='Money spent running ${dev}'><b>$todayCost</b></td>" +
 			"<td style='color:#007cbe'><b>$thisWeekEnergy</b></td>" +
@@ -810,7 +811,7 @@ String displayTable() {
 	//Build display string
 	str += "</tbody>"
     str += "<tr style='border-top:3px solid black'><td style='border-right:3px solid black;border-top:3px solid black'>Total</td>" +
-			"<td style='color:#be05f5;border-right:3px solid black;border-top:3px solid black'><b>$yesterdayTotalEnergy</b></td>" +
+			"<td style='color:#f88f05;border-right:3px solid black;border-top:3px solid black'><b>$yesterdayTotalEnergy</b></td>" +
 			"<td style='color:#be05f5;border-top:3px solid black'><b>$todayTotalEnergy</b></td>" +
 			"<td style='border-right:3px solid black;color:#be05f5;border-top:3px solid black' title='Money spent running $dev'><b>$totalCostToday</b></td>" +
 			"<td style='color:#007cbe;border-top:3px solid black'><b>$thisWeekTotal</b></td>" +
@@ -910,7 +911,6 @@ String buttonLink(String btnName, String linkText, color = "#1A77C9", font = "15
 
 void appButtonHandler(btn) {
 	logDebug "btn is ${btn}"
-	log.info "btn is ${btn}"
 	if(btn == "varTodayTotal") state.newTodayTotalVar = btn
 	else if(btn == "noVarTodayTotal") state.remTodayTotalVar = btn
     else if(btn == "varWeekTotal") state.newWeekTotalVar = btn
@@ -1102,7 +1102,7 @@ void updateCost(devName,devId) {
 	}
 	if(tempCost > 0.50) {
         // cost is probably an erroneous energy report since cost is more than 10 cents
-        log.error "Price change for ${devName} is ${tempEnergy} * ${tempRate} = ${tempCost} -- Exceeds .50 cents"
+        log.error "Probable erroneous energy report; ${devName} is ${tempEnergy} * ${tempRate} = ${tempCost} -- Exceeds .50 cents"
         tempCost = 0
 	}
 	tempTodayCost += tempCost
@@ -1138,6 +1138,7 @@ void updateCost(devName,devId) {
 void updateTotals() {
 
 	//Reset totals
+    thisyesterdayTotal = 0
 	totalCostToday = 0
 	totalCostWeek = 0
 	totalCostMonth = 0
@@ -1160,11 +1161,13 @@ void updateTotals() {
 		totalCostMonth += tempMonthCost
 
 		//Get usage from each device
+		yesterdayEnergy = device.yesterdayEnergy
 		todayEnergy = device.todayEnergy
 		thisWeek = device.thisWeekEnergy
 		thisMonth = device.thisMonthEnergy
 
 		//Add up total usage
+		thisyesterdayTotal += yesterdayEnergy
 		todayTotalEnergy += todayEnergy
 		thisWeekTotal += thisWeek
 		thisMonthTotal += thisMonth
@@ -1179,6 +1182,7 @@ void updateTotals() {
 	state.totalCostMonth = totalCostMonth
 
 	//Set state usage values
+   	state.yesterdayTotal = thisyesterdayTotal
 	state.todayTotalEnergy = todayTotalEnergy
 	state.thisWeekTotal = thisWeekTotal
 	state.thisMonthTotal = thisMonthTotal
