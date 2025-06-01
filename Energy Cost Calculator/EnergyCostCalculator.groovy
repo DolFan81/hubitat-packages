@@ -52,13 +52,14 @@
  * v0.8.2	swade	Corrected code to ignore when negative value reported
  * v0.8.3	swade	Added code to update Device Map values
  * v0.8.4	swade	Modified code for when device energy gets reset to Zero
- * v0.8.5	swade	Added Yesterday Energy to display
+ * v0.8.5	swade	Added Yesterday Energy to display table
  * v0.8.6	swade	Added Yesterday Energy Total to calculate totals
+ * v0.8.7	swade	Added Yesterday Cost to display table
  */
 
 import java.util.regex.*
 
-static String getVersion()	{  return '0.8.6'  }
+static String getVersion()	{  return '0.8.7'  }
 definition(
     name: "Energy Cost Calculator",
     namespace: "rle",
@@ -268,6 +269,8 @@ def updateDeviceMap () {
 	energies.each {myDev -> if(myDev.id.contains("${deviceForReset}")) myResetDevice = myDev.id }
     logTrace "Device ID is ${myResetDevice}"
     //log.info "Device ID is ${myResetDevice}"
+    //myDevName = energies["$state.deviceUpdateSelection"]
+    //log.info "Device Name: ${state.deviceUpdateSelection}"
     
     mydeviceForReset = state.energies["$myResetDevice"]
     logTrace "Device: ${mydeviceForReset}"
@@ -361,7 +364,7 @@ def updateDeviceMap () {
 		app.removeSetting("newtodayEnergy") 
     }
     
-	app.removeSetting("confirmationUpdateDeviceMap") 
+	app.removeSetting("confirmationUpdateDeviceMap")
 }
 
 def pageSelectVariables() {
@@ -733,7 +736,10 @@ def advancedOptions() {
 
 String displayTable() {
 	logDebug "Table display called"
-	String str = "<script src='https://code.iconify.design/iconify-icon/1.0.0/iconify-icon.min.js'></script>"
+    // used to calculate yesterday cost
+    tempRate = state.energyRate
+	
+    String str = "<script src='https://code.iconify.design/iconify-icon/1.0.0/iconify-icon.min.js'></script>"
 	str += "<link rel='stylesheet' type='text/css' href='https://cdn.datatables.net/v/bs/dt-1.11.3/datatables.min.css'/>"
 	str += "<script type='text/javascript' src='https://cdn.datatables.net/v/bs/dt-1.11.3/datatables.min.js'></script>"
 	str += "<style>.mdl-data-table tbody tr:hover{background-color:inherit} .tstat-col td,.tstat-col th { padding:8px 8px;text-align:center;font-size:13px}"+
@@ -741,6 +747,7 @@ String displayTable() {
 		"</style><div style='overflow-x:auto'><table id='main-table' class='mdl-data-table tstat-col cell-border' style='border:3px solid black; background-color:$state.tableBg'>" +
 		"<thead><tr style='border-bottom:3px solid black'><th style='border-right:3px solid black;border-bottom:3px solid black'>Meter</th>" +
 		"<th style='border-right:3px solid black;border-bottom:3px solid black'>Energy Yesterday</th>" +
+		"<th style='border-right:3px solid black;border-bottom:3px solid black'>Yesterday's Cost</th>" +
 		"<th style='border-bottom:3px solid black'>Energy Today</th>" +
 		"<th style='border-right:3px solid black;border-bottom:3px solid black'>Today's Cost</th>" +
 		"<th style='border-bottom:3px solid black'>Energy This Week</th>" +
@@ -771,7 +778,8 @@ String displayTable() {
 		todayCost = BigDecimal.valueOf(device.todayCost).setScale(2,BigDecimal.ROUND_HALF_UP)
 		thisWeekCost = BigDecimal.valueOf(device.thisWeekCost).setScale(2,BigDecimal.ROUND_HALF_UP)
 		thisMonthCost = BigDecimal.valueOf(device.thisMonthCost).setScale(2,BigDecimal.ROUND_HALF_UP)
-
+		yesterdayCost =  BigDecimal.valueOf(yesterdayEnergy * tempRate).setScale(2,BigDecimal.ROUND_HALF_UP)  //(yesterdayEnergy * tempRate)
+        
 		if(symbol) {todayCost = symbol+todayCost.toString()}
 		if(symbol) {thisWeekCost = symbol+thisWeekCost.toString()}
 		if(symbol) {thisMonthCost = symbol+thisMonthCost.toString()}
@@ -780,6 +788,7 @@ String displayTable() {
 		String devLink = "<a href='/device/edit/$dev.id' target='_blank' title='Open Device Page for $dev'>$dev"
 		str += "<tr style='color:black;border-top:1px solid black'><td style='border-right:3px solid black'>$devLink</td>" +
 			"<td style='border-right:3px solid black;color:#f88f05'><b>$yesterdayEnergy</b></td>" +
+			"<td style='border-right:3px solid black;color:#f88f05'><b>$yesterdayCost</b></td>" +
 			"<td style='color:#be05f5'><b>$todayEnergy</b></td>" +
 			"<td style='border-right:3px solid black;color:#be05f5' title='Money spent running ${dev}'><b>$todayCost</b></td>" +
 			"<td style='color:#007cbe'><b>$thisWeekEnergy</b></td>" +
@@ -803,15 +812,18 @@ String displayTable() {
 	totalCostToday = BigDecimal.valueOf(state.totalCostToday).setScale(2,BigDecimal.ROUND_HALF_UP)
 	totalCostWeek = BigDecimal.valueOf(state.totalCostWeek).setScale(2,BigDecimal.ROUND_HALF_UP)
 	totalCostMonth = BigDecimal.valueOf(state.totalCostMonth).setScale(2,BigDecimal.ROUND_HALF_UP)
+    yesterdayTotalCost = BigDecimal.valueOf(yesterdayTotalEnergy * tempRate).setScale(2,BigDecimal.ROUND_HALF_UP)
 
 	if(symbol) {totalCostToday = symbol+totalCostToday.toString()}
 	if(symbol) {totalCostWeek = symbol+totalCostWeek.toString()} 
 	if(symbol) {totalCostMonth = symbol+totalCostMonth.toString()}
+	if(symbol) {yesterdayTotalCost = symbol+yesterdayTotalCost.toString()}
 
 	//Build display string
 	str += "</tbody>"
     str += "<tr style='border-top:3px solid black'><td style='border-right:3px solid black;border-top:3px solid black'>Total</td>" +
 			"<td style='color:#f88f05;border-right:3px solid black;border-top:3px solid black'><b>$yesterdayTotalEnergy</b></td>" +
+			"<td style='color:#f88f05;border-right:3px solid black;border-top:3px solid black'><b>$yesterdayTotalCost</b></td>" +
 			"<td style='color:#be05f5;border-top:3px solid black'><b>$todayTotalEnergy</b></td>" +
 			"<td style='border-right:3px solid black;color:#be05f5;border-top:3px solid black' title='Money spent running $dev'><b>$totalCostToday</b></td>" +
 			"<td style='color:#007cbe;border-top:3px solid black'><b>$thisWeekTotal</b></td>" +
